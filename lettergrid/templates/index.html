@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LetterGrid Search</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --panel-bg: rgba(30, 41, 59, 0.7);
+            --tile-bg: rgba(51, 65, 85, 0.8);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --tile-size: 3.5rem;
+            --grid-gap: 0.5rem;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Outfit', sans-serif;
+            background: radial-gradient(circle at top right, #1e293b, #0f172a);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        header {
+            width: 100%;
+            padding: 2rem 0;
+            text-align: center;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            background: linear-gradient(to right, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .container {
+            display: flex;
+            gap: 3rem;
+            width: 80%;
+            max-width: none;
+            margin-bottom: 3rem;
+            align-items: flex-start;
+            justify-content: center;
+        }
+
+        .main-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            flex: 0 0 auto;
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            background: var(--panel-bg);
+            padding: 1rem;
+            border-radius: 1rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        input[type="text"] {
+            flex-grow: 1;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(15, 23, 42, 0.6);
+            color: white;
+            font-size: 1.25rem;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            outline: none;
+            transition: border-color 0.2s;
+            text-transform: uppercase;
+        }
+
+        input[type="text"]:focus {
+            border-color: #38bdf8;
+        }
+
+        input[type="color"] {
+            -webkit-appearance: none;
+            border: none;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            cursor: pointer;
+            padding: 0;
+            background: none;
+        }
+
+        input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+
+        input[type="color"]::-webkit-color-swatch {
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+        }
+
+        button.btn-save {
+            padding: 0.75rem 1.5rem;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        button.btn-save:hover {
+            background: var(--accent-hover);
+        }
+
+        button.btn-save:active {
+            transform: scale(0.95);
+        }
+
+        .grid-container {
+            position: relative;
+            background: var(--panel-bg);
+            padding: 2rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            display: inline-block;
+        }
+
+        .letter-grid {
+            display: grid;
+            grid-template-columns: repeat(14, 1fr);
+            gap: var(--grid-gap);
+        }
+
+        .tile {
+            width: var(--tile-size);
+            height: var(--tile-size);
+            background: var(--tile-bg);
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: #cbd5e1;
+            user-select: none;
+            box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.05), 0 4px 6px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s, background 0.3s, color 0.3s;
+            position: relative;
+            z-index: 1;
+        }
+
+        .tile.active {
+            color: white;
+            transform: scale(1.05);
+            z-index: 2;
+        }
+
+        .tile.selected {
+            box-shadow: inset 0 0 0 4px white, 0 4px 6px rgba(0, 0, 0, 0.2);
+            z-index: 3;
+            transform: scale(1.05);
+        }
+
+        .all-words-panel {
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto 2rem auto;
+            background: var(--panel-bg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .all-words-panel h2 {
+            margin-top: 0;
+            font-size: 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .all-words-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .all-word-pill {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 0.25rem 0.6rem;
+            border-radius: 1rem;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #e2e8f0;
+        }
+
+        .all-word-pill:hover {
+            background: var(--accent);
+            border-color: var(--accent-hover);
+        }
+
+        .svg-overlay {
+            position: absolute;
+            top: 2rem;
+            left: 2rem;
+            width: calc(100% - 4rem);
+            height: calc(100% - 4rem);
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        path.line-path {
+            fill: none;
+            stroke-width: 16;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            opacity: 0.6;
+            filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3));
+        }
+
+        .sidebar {
+            flex: 1;
+            background: var(--panel-bg);
+            border-radius: 1.5rem;
+            padding: 1.5rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            max-height: 80vh;
+        }
+
+        .sidebar h2 {
+            margin-top: 0;
+            font-size: 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .sidebar-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .sidebar-section h2 {
+            border-bottom: none;
+            margin-bottom: 0.5rem;
+            padding-bottom: 0;
+            font-size: 1.25rem;
+            color: #cbd5e1;
+        }
+
+        .equiv-input {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(15, 23, 42, 0.6);
+            color: white;
+            font-size: 1rem;
+            font-family: 'Outfit', sans-serif;
+            outline: none;
+            transition: border-color 0.2s;
+            text-transform: uppercase;
+            box-sizing: border-box;
+        }
+
+        .equiv-input:focus {
+            border-color: #38bdf8;
+        }
+
+        .saved-queries {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            overflow-y: auto;
+
+            align-content: flex-start;
+            gap: 0.75rem;
+        }
+
+        .saved-query {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            background: rgba(15, 23, 42, 0.4);
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: background 0.2s;
+            border: 1px solid transparent;
+            flex: 0 0 auto;
+        }
+
+        .saved-query:hover {
+            background: rgba(15, 23, 42, 0.8);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .saved-query.dragging {
+            opacity: 0.5;
+            transform: scale(0.98);
+        }
+
+        .saved-query.drag-over {
+            border-top: 2px dashed #38bdf8;
+        }
+
+        .query-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .query-text {
+            font-weight: 600;
+            font-size: 1.1rem;
+            letter-spacing: 1px;
+            word-break: break-all;
+            flex-grow: 1;
+        }
+
+        .query-text.not-found {
+            text-decoration: line-through;
+            opacity: 0.5;
+        }
+
+        .query-visibility {
+            cursor: pointer;
+            opacity: 0.5;
+            transition: opacity 0.2s;
+            display: flex;
+            align-items: center;
+        }
+
+        .query-visibility:hover {
+            opacity: 0.8;
+        }
+
+        .query-visibility.visible {
+            opacity: 1;
+            color: #38bdf8;
+        }
+
+        .query-delete {
+            cursor: pointer;
+            opacity: 0.5;
+            transition: opacity 0.2s, color 0.2s;
+            display: flex;
+            align-items: center;
+            margin-left: 0.25rem;
+        }
+
+        .query-delete:hover {
+            opacity: 1;
+            color: #ef4444;
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+            padding-top: 1rem;
+            display: flex;
+            gap: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-secondary {
+            flex: 1;
+            padding: 0.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 0.5rem;
+            font-size: 0.9rem;
+            cursor: pointer;
+            text-align: center;
+            transition: background 0.2s;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        @media (max-width: 1024px) {
+            .container {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .sidebar {
+                width: 100%;
+                max-width: 600px;
+            }
+
+            :root {
+                --tile-size: 2.5rem;
+                --grid-gap: 0.25rem;
+            }
+
+            .tile {
+                font-size: 1.25rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>LetterGrid</h1>
+    </header>
+
+    <div class="container">
+        <div class="main-panel">
+            <div class="controls">
+                <input type="text" id="searchInput" placeholder="Type a word..." autocomplete="off">
+                <input type="color" id="colorPicker" value="#ef4444" list="presetColors">
+                <datalist id="presetColors">
+                    <option>#ef4444</option>
+                    <option>#f97316</option>
+                    <option>#f59e0b</option>
+                    <option>#eab308</option>
+                    <option>#84cc16</option>
+                    <option>#22c55e</option>
+                    <option>#10b981</option>
+                    <option>#14b8a6</option>
+                    <option>#06b6d4</option>
+                    <option>#0ea5e9</option>
+                    <option>#3b82f6</option>
+                    <option>#6366f1</option>
+                    <option>#8b5cf6</option>
+                    <option>#a855f7</option>
+                    <option>#d946ef</option>
+                    <option>#ec4899</option>
+                    <option>#f43f5e</option>
+                    <option>#dc2626</option>
+                    <option>#c026d3</option>
+                    <option>#7c3aed</option>
+                    <option>#2563eb</option>
+                    <option>#059669</option>
+                    <option>#65a30d</option>
+                    <option>#ea580c</option>
+                </datalist>
+                <button class="btn-save" id="btnSave">Save</button>
+            </div>
+
+            <div class="grid-container" id="gridContainer">
+                <div class="letter-grid" id="letterGrid">
+                    {% for r in range(14) %}
+                    {% for c in range(14) %}
+                    <div class="tile" data-r="{{ r }}" data-c="{{ c }}">{{ grid[r][c] }}</div>
+                    {% endfor %}
+                    {% endfor %}
+                </div>
+                <svg class="svg-overlay" id="svgOverlay"></svg>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="sidebar-section">
+                <h2>Equivalences</h2>
+                <input type="text" id="equivInput" placeholder="e.g. B=D=P, A=E" class="equiv-input" autocomplete="off"
+                    title="Map letters that can be substituted for each other">
+            </div>
+            <div class="sidebar-section">
+                <h2>Settings</h2>
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; margin-bottom: 0.5rem;">
+                    <input type="checkbox" id="reuseToggle" style="width: 1.2rem; height: 1.2rem; cursor: pointer;">
+                    <span style="font-size: 1.1rem; color: #cbd5e1;">Allow Letter Reuse</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; margin-bottom: 0.5rem;">
+                    <input type="checkbox" id="straightToggle" style="width: 1.2rem; height: 1.2rem; cursor: pointer;">
+                    <span style="font-size: 1.1rem; color: #cbd5e1;">Straight Lines Only</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; margin-bottom: 0.5rem;">
+                    <input type="checkbox" id="showLinesToggle" checked
+                        style="width: 1.2rem; height: 1.2rem; cursor: pointer;">
+                    <span style="font-size: 1.1rem; color: #cbd5e1;">Show Path Lines</span>
+                </label>
+                <button id="btnRecompute" class="btn-secondary" style="width: 100%;">Recompute Word Search</button>
+                <div id="recomputeStatus"
+                    style="font-size: 0.9rem; color: #38bdf8; margin-top: 0.5rem; text-align: center; display: none;">
+                    Computing... Please wait</div>
+            </div>
+            <div class="sidebar-section" id="selectedTileSection" style="display: none;">
+                <h2 id="selectedTileHeader">Words on Tile</h2>
+                <ul class="saved-queries" id="selectedTileWords" style="max-height: 250px; overflow-y: auto;">
+                    <!-- Items inserted via JS -->
+                </ul>
+            </div>
+
+            <h2>Saved Words</h2>
+            <ul class="saved-queries" id="savedQueriesList">
+                <!-- Items inserted via JS -->
+            </ul>
+            <div class="sidebar-footer" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                <div style="display: flex; gap: 0.5rem;">
+                    <button id="btnExport" class="btn-secondary" style="flex: 1;">Export</button>
+                    <button id="btnImport" class="btn-secondary" style="flex: 1;">Import</button>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                    <button onclick="loadState('empty')" class="btn-secondary"
+                        style="font-size: 0.8rem; padding: 0.4rem;">Clear All</button>
+                    <button onclick="loadState('state1')" class="btn-secondary"
+                        style="font-size: 0.8rem; padding: 0.4rem;">State 1</button>
+                    <button onclick="loadState('state2')" class="btn-secondary"
+                        style="font-size: 0.8rem; padding: 0.4rem;">State 2</button>
+                    <button onclick="loadState('state3')" class="btn-secondary"
+                        style="font-size: 0.8rem; padding: 0.4rem;">State 3</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="all-words-panel">
+        <h2>All Found Words <span id="allWordsCount"
+                style="font-size: 0.8em; color: #94a3b8; font-weight: normal;"></span></h2>
+        <div class="all-words-list" id="allWordsList">
+            <!-- filled by JS -->
+        </div>
+    </div>
+
+    <script>
+        const gridData = {{ grid| tojson }};
+        const rows = 14;
+        const cols = 14;
+
+        const searchInput = document.getElementById('searchInput');
+        const colorPicker = document.getElementById('colorPicker');
+        const btnSave = document.getElementById('btnSave');
+        const svgOverlay = document.getElementById('svgOverlay');
+        const letterGrid = document.getElementById('letterGrid');
+        const savedQueriesList = document.getElementById('savedQueriesList');
+        const equivInput = document.getElementById('equivInput');
+        const reuseToggle = document.getElementById('reuseToggle');
+        const straightToggle = document.getElementById('straightToggle');
+        const showLinesToggle = document.getElementById('showLinesToggle');
+        const btnRecompute = document.getElementById('btnRecompute');
+        const recomputeStatus = document.getElementById('recomputeStatus');
+        const allWordsListEl = document.getElementById('allWordsList');
+        const allWordsCountEl = document.getElementById('allWordsCount');
+
+        let allWords = {{ all_words | tojson | safe }};
+        let savedQueries = JSON.parse(localStorage.getItem('letterGridQueries') || '[]');
+        equivInput.value = localStorage.getItem('letterGridEquiv') || '';
+        reuseToggle.checked = localStorage.getItem('letterGridReuse') === 'true';
+        straightToggle.checked = localStorage.getItem('letterGridStraight') === 'true';
+        showLinesToggle.checked = localStorage.getItem('letterGridShowLines') !== 'false';
+
+        equivInput.addEventListener('input', () => {
+            localStorage.setItem('letterGridEquiv', equivInput.value);
+            handleSearch();
+            renderSavedQueries();
+        });
+
+        reuseToggle.addEventListener('change', () => {
+            localStorage.setItem('letterGridReuse', reuseToggle.checked);
+            handleSearch();
+            renderSavedQueries();
+        });
+
+        straightToggle.addEventListener('change', () => {
+            localStorage.setItem('letterGridStraight', straightToggle.checked);
+            handleSearch();
+            renderSavedQueries();
+        });
+
+        showLinesToggle.addEventListener('change', () => {
+            localStorage.setItem('letterGridShowLines', showLinesToggle.checked);
+            drawPaths();
+        });
+
+        btnRecompute.addEventListener('click', async () => {
+            btnRecompute.disabled = true;
+            recomputeStatus.style.display = 'block';
+            try {
+                const response = await fetch('/api/recompute', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        reuse: reuseToggle.checked,
+                        equivalencies: equivInput.value,
+                        straight: straightToggle.checked
+                    })
+                });
+                const data = await response.json();
+                if (!data.success) {
+                    alert('Recompute failed: ' + data.error);
+                } else {
+                    document.getElementById('selectedTileSection').style.display = 'none';
+                    renderAllWords(data.all_words);
+                }
+            } catch (err) {
+                console.error(err);
+                alert('An error occurred during recompute.');
+            } finally {
+                btnRecompute.disabled = false;
+                recomputeStatus.style.display = 'none';
+            }
+        });
+
+        function renderAllWords(words) {
+            allWordsCountEl.textContent = `(${words.length})`;
+            allWordsListEl.innerHTML = '';
+            words.forEach(word => {
+                const pill = document.createElement('div');
+                pill.className = 'all-word-pill';
+                pill.textContent = word;
+                pill.addEventListener('click', () => {
+                    searchInput.value = word;
+                    handleSearch();
+                });
+                pill.addEventListener('mouseenter', () => {
+                    window.isHoveringWord = true;
+                    searchInput.value = word;
+                    handleSearch();
+                });
+                pill.addEventListener('mouseleave', () => {
+                    window.isHoveringWord = false;
+                    setTimeout(() => {
+                        if (!window.isHoveringWord) {
+                            searchInput.value = window.actualSearchValue;
+                            handleSearch();
+                        }
+                    }, 50);
+                });
+                allWordsListEl.appendChild(pill);
+            });
+        }
+        renderAllWords(allWords);
+
+        function checkEquivalent(gridLetter, searchLetter) {
+            if (gridLetter === searchLetter) return true;
+
+            const eqStr = equivInput.value.trim().toUpperCase();
+            if (!eqStr) return false;
+
+            const groups = eqStr.split(',').map(s => s.split('=').map(c => c.trim()).filter(c => c));
+            for (let g of groups) {
+                if (g.includes(gridLetter) && g.includes(searchLetter)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        let tilesMap = []; // 2D array of DOM elements
+
+        // Initialize tilesMap
+        const tileEls = document.querySelectorAll('.tile');
+        let idx = 0;
+        for (let r = 0; r < rows; r++) {
+            let rowArr = [];
+            for (let c = 0; c < cols; c++) {
+                rowArr.push(tileEls[idx]);
+                idx++;
+            }
+            tilesMap.push(rowArr);
+        }
+
+        // Search variables
+        let currentPaths = []; // Array of paths (each path is an array of [r, c] coordinates)
+
+        // Adjacency directions (8-way)
+        const dirs = [
+            [-1, -1], [-1, 0], [-1, 1],
+            [0, -1], [0, 1],
+            [1, -1], [1, 0], [1, 1]
+        ];
+
+        function findPaths(word) {
+            if (!word) return [];
+            word = word.toUpperCase();
+            let allPaths = [];
+
+            function dfs(r, c, index, path, visited, direction) {
+                if (index === word.length) {
+                    allPaths.push([...path]);
+                    return true;
+                }
+                let foundAny = false;
+                for (let d of dirs) {
+                    if (straightToggle.checked && direction !== null && (direction[0] !== d[0] || direction[1] !== d[1])) {
+                        continue;
+                    }
+
+                    let nr = r + d[0], nc = c + d[1];
+                    if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) {
+                        const canVisit = reuseToggle.checked ? true : !visited[nr][nc];
+                        if (canVisit && checkEquivalent(gridData[nr][nc], word[index])) {
+                            let newDir = direction !== null ? direction : d;
+                            let wasVisited = visited[nr][nc];
+                            visited[nr][nc] = true;
+                            path.push([nr, nc]);
+                            let found = dfs(nr, nc, index + 1, path, visited, newDir);
+                            if (found) foundAny = true;
+                            path.pop();
+                            visited[nr][nc] = wasVisited;
+
+                            // If we only want the FIRST path for words <= 3, short-circuit
+                            // if (word.length <= 3 && found) {
+                            //     return true;
+                            // }
+                        }
+                    }
+                }
+                return foundAny;
+            }
+
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    if (checkEquivalent(gridData[r][c], word[0])) {
+                        let visited = Array.from({ length: rows }, () => Array(cols).fill(false));
+                        visited[r][c] = true;
+                        dfs(r, c, 1, [[r, c]], visited, null);
+                        // Short-circuit if only first path is needed
+                        // if (word.length <= 3 && allPaths.length > 0) {
+                        //     return [allPaths[0]];
+                        // }
+                    }
+                }
+            }
+            return allPaths;
+        }
+
+        function drawPaths() {
+            svgOverlay.innerHTML = '';
+
+            // Re-apply box-shadow/color to active tiles
+            document.querySelectorAll('.tile.active').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tile.selected').forEach(t => t.classList.remove('selected'));
+            document.querySelectorAll('.tile').forEach(t => t.style.background = '');
+
+            let stuffToDraw = [];
+            if (currentPaths.length > 0) {
+                stuffToDraw.push({ paths: currentPaths, color: colorPicker.value });
+            }
+
+            savedQueries.forEach(q => {
+                if (q.visible) {
+                    if (q.type === 'group') {
+                        stuffToDraw.push({ paths: [q.cells], color: q.color, noLines: true });
+                    } else {
+                        const qPaths = findPaths(q.word);
+                        if (qPaths.length > 0) {
+                            stuffToDraw.push({ paths: qPaths, color: q.color });
+                        }
+                    }
+                }
+            });
+
+            if (window.selectedCells && window.selectedCells.length > 0) {
+                stuffToDraw.push({ paths: [window.selectedCells], color: colorPicker.value, noLines: true, isSelection: true });
+            }
+
+            if (stuffToDraw.length === 0) return;
+
+            const gridRect = letterGrid.getBoundingClientRect();
+
+            stuffToDraw.forEach(item => {
+                item.paths.forEach(path => {
+                    let dStr = '';
+                    path.forEach((pos, idx) => {
+                        const r = pos[0], c = pos[1];
+                        const tile = tilesMap[r][c];
+                        tile.classList.add('active');
+                        if (item.isSelection) tile.classList.add('selected');
+                        tile.style.background = item.color;
+
+                        const tRect = tile.getBoundingClientRect();
+                        const x = tRect.left - gridRect.left + tRect.width / 2;
+                        const y = tRect.top - gridRect.top + tRect.height / 2;
+
+                        if (idx === 0) {
+                            dStr += `M ${x} ${y} `;
+                        } else {
+                            dStr += `L ${x} ${y} `;
+                        }
+                    });
+
+                    if (showLinesToggle.checked && !item.noLines && path.length > 1) {
+                        const pathEl = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                        pathEl.setAttribute('d', dStr);
+                        pathEl.setAttribute('class', 'line-path');
+                        pathEl.setAttribute('stroke', item.color);
+                        svgOverlay.appendChild(pathEl);
+                    }
+                });
+            });
+        }
+
+        function handleSearch() {
+            const word = searchInput.value.trim();
+            currentPaths = findPaths(word);
+            drawPaths();
+        }
+
+        searchInput.addEventListener('input', () => {
+            window.actualSearchValue = searchInput.value;
+            handleSearch();
+        });
+        colorPicker.addEventListener('input', drawPaths); // Redraw paths changing color in realtime
+
+        window.addEventListener('resize', () => {
+            // Give DOM a tick to layout
+            setTimeout(drawPaths, 50);
+        });
+
+        // Tile click logic
+        window.actualSearchValue = searchInput.value;
+        window.isHoveringWord = false;
+        window.selectedCells = [];
+
+        tileEls.forEach(tile => {
+            tile.style.cursor = 'pointer';
+            tile.addEventListener('click', async (e) => {
+                const r = parseInt(tile.dataset.r);
+                const c = parseInt(tile.dataset.c);
+                const letter = tile.textContent;
+
+                if (e.ctrlKey) {
+                    const idx = window.selectedCells.findIndex(pos => pos[0] === r && pos[1] === c);
+                    if (idx > -1) {
+                        window.selectedCells.splice(idx, 1);
+                    } else {
+                        window.selectedCells.push([r, c]);
+                    }
+                    drawPaths();
+                    return;
+                }
+
+                window.selectedCells = [];
+                drawPaths();
+
+                try {
+                    const response = await fetch(`/api/tile/${r}/${c}`);
+                    let words = await response.json();
+
+                    // Prioritize words that start with this tile's letter
+                    const startsWith = words.filter(w => w.startsWith(letter));
+                    const others = words.filter(w => !w.startsWith(letter));
+                    words = [...startsWith, ...others];
+
+                    document.getElementById('selectedTileSection').style.display = 'block';
+                    document.getElementById('selectedTileHeader').textContent = `Words through ${letter} (${r},${c})`;
+
+                    const ul = document.getElementById('selectedTileWords');
+                    ul.innerHTML = '';
+
+                    if (words.length === 0) {
+                        ul.innerHTML = '<li class="saved-query"><div class="query-text">No words found</div></li>';
+                    }
+
+                    words.forEach(word => {
+                        const li = document.createElement('li');
+                        li.className = 'saved-query';
+                        li.innerHTML = `<div class="query-text">${word}</div>`;
+
+                        li.addEventListener('mouseenter', () => {
+                            window.isHoveringWord = true;
+                            searchInput.value = word;
+                            handleSearch();
+                        });
+
+                        li.addEventListener('mouseleave', () => {
+                            window.isHoveringWord = false;
+                            setTimeout(() => {
+                                if (!window.isHoveringWord) {
+                                    searchInput.value = window.actualSearchValue;
+                                    handleSearch();
+                                }
+                            }, 10);
+                        });
+
+                        li.addEventListener('click', () => {
+                            window.actualSearchValue = word;
+                            searchInput.value = word;
+                            handleSearch();
+                        });
+
+                        ul.appendChild(li);
+                    });
+                } catch (e) {
+                    console.error('Error fetching tile words:', e);
+                }
+            });
+        });
+
+        // Save Query Logic
+        function renderSavedQueries() {
+            savedQueriesList.innerHTML = '';
+            savedQueries.forEach((q, index) => {
+                const li = document.createElement('li');
+                li.className = 'saved-query';
+
+                let isNotFound = false;
+                if (q.type !== 'group') {
+                    const paths = findPaths(q.word);
+                    isNotFound = paths.length === 0;
+                }
+
+                li.innerHTML = `
+                    <div class="query-color" style="background: ${q.color}"></div>
+                    <div class="query-text ${isNotFound ? 'not-found' : ''}">${q.word} ${q.type === 'group' ? '<span style="font-size:0.8em; opacity:0.7;">(Group)</span>' : ''}</div>
+                    <div class="query-visibility ${q.visible ? 'visible' : ''}" title="Toggle Visibility">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            ${q.visible
+                        ? '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>'
+                        : '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>'}
+                        </svg>
+                    </div>
+                    <div class="query-delete" title="Delete Word">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                    </div>
+                `;
+
+                // Add event listeners (split into two because of toggle)
+                const textEl = li.querySelector('.query-text');
+                const colorEl = li.querySelector('.query-color');
+                const visibilityEl = li.querySelector('.query-visibility');
+                const deleteEl = li.querySelector('.query-delete');
+
+                // Click text to reload word into search input
+                const loadQuery = () => {
+                    if (q.type === 'group') {
+                        searchInput.value = q.word;
+                        colorPicker.value = q.color;
+                        window.selectedCells = [...q.cells];
+                        drawPaths();
+                    } else {
+                        window.selectedCells = [];
+                        searchInput.value = q.word;
+                        colorPicker.value = q.color;
+                        handleSearch();
+                    }
+                };
+
+                textEl.addEventListener('click', loadQuery);
+                colorEl.addEventListener('click', loadQuery);
+
+                visibilityEl.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    q.visible = !q.visible;
+                    localStorage.setItem('letterGridQueries', JSON.stringify(savedQueries));
+                    renderSavedQueries();
+                    drawPaths();
+                });
+
+                deleteEl.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    savedQueries.splice(index, 1);
+                    localStorage.setItem('letterGridQueries', JSON.stringify(savedQueries));
+                    if (searchInput.value.toUpperCase() === q.word) {
+                        searchInput.value = '';
+                        currentPaths = [];
+                    }
+                    renderSavedQueries();
+                    drawPaths();
+                });
+
+                // Drag and drop logic
+                li.draggable = true;
+                li.dataset.index = index;
+
+                li.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/plain', index);
+                    li.classList.add('dragging');
+                });
+
+                li.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    li.classList.add('drag-over');
+                });
+
+                li.addEventListener('dragleave', () => {
+                    li.classList.remove('drag-over');
+                });
+
+                li.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    li.classList.remove('drag-over');
+                    const dragIndex = parseInt(e.dataTransfer.getData('text/plain'), 10);
+                    const dropIndex = parseInt(li.dataset.index, 10);
+
+                    if (dragIndex !== dropIndex && !isNaN(dragIndex) && !isNaN(dropIndex)) {
+                        const draggedItem = savedQueries[dragIndex];
+                        savedQueries.splice(dragIndex, 1);
+                        savedQueries.splice(dropIndex, 0, draggedItem);
+
+                        localStorage.setItem('letterGridQueries', JSON.stringify(savedQueries));
+                        renderSavedQueries();
+                        drawPaths();
+                    }
+                });
+
+                li.addEventListener('dragend', () => {
+                    li.classList.remove('dragging');
+                    savedQueriesList.querySelectorAll('.saved-query').forEach(item => item.classList.remove('drag-over'));
+                });
+
+                savedQueriesList.appendChild(li);
+            });
+        }
+
+        btnSave.addEventListener('click', () => {
+            if (window.selectedCells && window.selectedCells.length > 0) {
+                let groupName = searchInput.value.trim().toUpperCase();
+                const existingGroupIndex = savedQueries.findIndex(q => q.word === groupName && q.type === 'group');
+
+                if (existingGroupIndex === -1 || !groupName) {
+                    const promptName = prompt("Enter a name for this cell group:", groupName || "My Group");
+                    if (!promptName) return;
+                    groupName = promptName.trim().toUpperCase();
+                }
+
+                const existingIndex = savedQueries.findIndex(q => q.word === groupName);
+                if (existingIndex > -1) {
+                    savedQueries[existingIndex] = {
+                        type: 'group',
+                        word: groupName,
+                        cells: [...window.selectedCells],
+                        color: colorPicker.value,
+                        visible: true
+                    };
+                } else {
+                    savedQueries.push({
+                        type: 'group',
+                        word: groupName,
+                        cells: [...window.selectedCells],
+                        color: colorPicker.value,
+                        visible: true
+                    });
+                }
+
+                window.selectedCells = [];
+                searchInput.value = '';
+                handleSearch();
+                localStorage.setItem('letterGridQueries', JSON.stringify(savedQueries));
+                renderSavedQueries();
+                return;
+            }
+
+            const word = searchInput.value.trim().toUpperCase();
+            if (!word) return;
+
+            // Check if already exists
+            const existingIndex = savedQueries.findIndex(q => q.word === word);
+            if (existingIndex > -1) {
+                savedQueries[existingIndex].color = colorPicker.value;
+            } else {
+                savedQueries.push({
+                    word: word,
+                    color: colorPicker.value,
+                    visible: true
+                });
+            }
+
+            localStorage.setItem('letterGridQueries', JSON.stringify(savedQueries));
+            renderSavedQueries();
+        });
+
+        // Initialize UI
+        renderSavedQueries();
+
+        const btnExport = document.getElementById('btnExport');
+        const btnImport = document.getElementById('btnImport');
+
+        btnExport.addEventListener('click', async () => {
+            const dataStr = JSON.stringify(savedQueries);
+            try {
+                await navigator.clipboard.writeText(dataStr);
+                alert('Copied to clipboard!');
+            } catch (err) {
+                prompt('Copy this text:', dataStr);
+            }
+        });
+
+        btnImport.addEventListener('click', () => {
+            const dataStr = prompt('Paste your word list JSON:');
+            if (!dataStr) return;
+            try {
+                const imported = JSON.parse(dataStr);
+                if (Array.isArray(imported)) {
+                    imported.forEach(impQ => {
+                        const existingIndex = savedQueries.findIndex(q => q.word === impQ.word);
+                        if (existingIndex > -1) {
+                            savedQueries[existingIndex] = impQ;
+                        } else {
+                            savedQueries.push(impQ);
+                        }
+                    });
+                    localStorage.setItem('letterGridQueries', JSON.stringify(savedQueries));
+                    renderSavedQueries();
+                    drawPaths();
+                }
+            } catch (err) {
+                alert('Invalid JSON data. Paste exactly what was exported.');
+            }
+        });
+
+        async function loadState(name) {
+            if (name === 'empty') {
+                if (confirm('Clear all saved words and groups?')) {
+                    savedQueries = [];
+                    localStorage.setItem('letterGridQueries', JSON.stringify(savedQueries));
+                    renderSavedQueries();
+                    drawPaths();
+                }
+                return;
+            }
+
+            try {
+                const response = await fetch(`/templates/jsons/${name}.json`);
+                if (!response.ok) throw new Error('Failed to fetch state');
+                const data = await response.json();
+                if (Array.isArray(data)) {
+                    savedQueries = data;
+                    localStorage.setItem('letterGridQueries', JSON.stringify(savedQueries));
+                    renderSavedQueries();
+                    drawPaths();
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Error loading state file. Make sure /static/jsons/' + name + '.json exists.');
+            }
+        }
+
+        // Default to State 3 if no queries exist
+        if (savedQueries.length === 0 && !localStorage.getItem('letterGridInitialized')) {
+            localStorage.setItem('letterGridInitialized', 'true');
+            loadState('state3');
+        }
+
+    </script>
+</body>
+
+</html>
