@@ -1,0 +1,14 @@
+{
+  "builds": [
+    {
+      "src": "lettergrid/lettergrid.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "lettergrid/lettergrid.py"
+    }
+  ]
+}

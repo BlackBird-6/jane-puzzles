@@ -4,9 +4,7 @@ import json
 from flask import Flask, render_template, jsonify, request
 from collections import defaultdict
 
-abs_path = os.path.abspath(__file__)
-script_dir = os.path.dirname(abs_path)
-os.chdir(script_dir)
+script_dir = os.path.dirname(os.path.abspath(__file__))
 
 def get_path(filename):
     return os.path.join(script_dir, filename)
