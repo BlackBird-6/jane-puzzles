@@ -12,23 +12,43 @@ N = 10_000_000
 best = 0
 bestarr = []
 
-ratioA = 2.1914883589405223
-ratioB = 2.8392881038404925
-for i in range(1000, N):
-    # if i % 10 == 0:
-    #     print(f"Trying N={i}")
-    j_lower = int(i/ratioA - 0.0001*i)
-    j_upper = int(i/ratioA + 0.0001*i)+1
+ratioX = 1.1914878255690124
+ratioY = 2.382975822577713
 
-    for j in range(j_lower, j_upper):
-        k_lower = int(j/ratioB - 0.0001*j)
-        k_upper = int(j/ratioB + 0.0001*j)+1
-        for k in range(k_lower,k_upper):
-            l = 0
-            if f(i,j,k,l,1) > best:
-                print(f"# NEW BEST: {f(i,j,k,l,1)}: {i} {j} {k} {l} sums to {i+j+k+l} with ratios {i/j if j>0 else 0} {j/k if k>0 else 0}")
-                best = f(i,j,k,l,1)
-                bestarr = [i,j,k,l]
+ratioA = 2.1914878909476756
+ratioB = 2.8392867657160803
+
+i_candidates = [157305]
+
+# ratioA = 2.1914878909476756
+# ratioB = 2.8392867657160803
+# +/- 0.000001
+
+def find_next_i(last_i, r):
+    global best
+    for i in range(int(last_i*r - 0.001*last_i*r), int(last_i*r + 0.001*last_i*r)):
+        j_lower = int(i/ratioA - 0.000001*i)
+        j_upper = int(i/ratioA + 0.000001*i)+1
+
+        for j in range(j_lower, j_upper):
+            k_lower = int(j/ratioB - 0.000001*j)
+            k_upper = int(j/ratioB + 0.000001*j)+1
+            for k in range(k_lower,k_upper):
+                l = 0
+                if f(i,j,k,l,1) > best:
+                    print(f"# NEW BEST: {f(i,j,k,l,1)}: {i} {j} {k} {l} sums to {i+j+k+l} with ratios {i/j if j>0 else 0} {j/k if k>0 else 0}")
+                    best = f(i,j,k,l,1)
+                    i_candidates.append(i)
+
+
+while len(i_candidates) > 0:
+    last_i = i_candidates.pop(0)
+    find_next_i(last_i,ratioX)
+    find_next_i(last_i,ratioY)
+    
+
+
+   
 
 # NEW BEST: 5: 1 0 0 0 sums to 1
 # NEW BEST: 7: 3 1 0 0 sums to 4
@@ -84,6 +104,37 @@ for i in range(1000, N):
 
 # NEW BEST: 31: 55403 25281 8904 0 sums to 89588 with ratios 2.1914876784937305 2.8392857142857144
 # NEW BEST: 32: 66012 30122 10609 0 sums to 106743 with ratios 2.19148794900737 2.839287397492695
+# NEW BEST: 33: 157305 71780 25281 0 sums to 254366 with ratios 2.1914878796322097 2.8392864206320
+# NEW BEST: 34: 187427 85525 30122 0 sums to 303074 with ratios 2.1914878690441393 2.839286899940243
 
 # Best i values include
-# [1201, 1431, 1705, 4063, 4841, 5768, 13745, 16377, 19513, 46499, 55403, 66012, ]
+# [1201, 1431, 1705, 4063, 4841, 5768, 13745, 16377, 19513, 46499, 55403, 66012, 157305]
+
+# Either of ratios
+# ratioX = 1.1914878255690124
+# ratioY = 2.382975822577713
+
+# NEW BEST: 35: 223317 101902 35890 0 sums to 361109 with ratios 2.1914879001393497 2.839286709389802
+# NEW BEST: 36: 532159 242830 85525 0 sums to 860514 with ratios 2.191487872173949 2.839286758257819
+# NEW BEST: 37: 634061 289329 101902 0 sums to 1025292 with ratios 2.1914878909476756 2.8392867657160803
+
+# ratioA = 2.1914878909476756
+# ratioB = 2.8392867657160803
+# +/- 0.000001
+
+# NEW BEST: 38: 755476 344732 121415 0 sums to 1221623 with ratios 2.1914878804404583 2.8392867438125435
+# NEW BEST: 39: 1800281 821488 289329 0 sums to 2911098 with ratios 2.191487885398204 2.839286763511435
+# NEW BEST: 40: 2145013 978793 344732 0 sums to 3468538 with ratios 2.191487883546368 2.8392867502871795
+# NEW BEST: 41: 2555757 1166220 410744 0 sums to 4132721 with ratios 2.1914878839327057 2.839286757688487
+# NEW BEST: 42: 6090307 2779074 978793 0 sums to 9848174 with ratios 2.1914878840937666 2.8392867541962397
+# NEW BEST: 43: 7256527 3311233 1166220 0 sums to 11733980 with ratios 2.191487883818505 2.8392867555006776
+# NEW BEST: 44: 8646064 3945294 1389537 0 sums to 13980895 with ratios 2.191487884046157 2.8392867
+
+# So M = 44 (max M obtained on S)
+
+# Constraint is 0 <= a, b, c, d <= 10,000,000 so we are now done
+# Answer is 8646064;3945294;1389537;0
+
+# THE END
+
+# 4:41~5:48
