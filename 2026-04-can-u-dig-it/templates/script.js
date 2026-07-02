@@ -45,23 +45,13 @@ showLinesToggle.addEventListener('change', () => {
 btnRecompute.addEventListener('click', async () => {
     btnRecompute.disabled = true;
     recomputeStatus.style.display = 'block';
+    
+    // allow UI to render status
+    await new Promise(r => setTimeout(r, 50));
+    
     try {
-        const response = await fetch('/api/recompute', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                reuse: reuseToggle.checked,
-                equivalencies: equivInput.value,
-                straight: straightToggle.checked
-            })
-        });
-        const data = await response.json();
-        if (!data.success) {
-            alert('Recompute failed: ' + data.error);
-        } else {
-            document.getElementById('selectedTileSection').style.display = 'none';
-            renderAllWords(data.all_words);
-        }
+        await buildWordMap();
+        document.getElementById('selectedTileSection').style.display = 'none';
     } catch (err) {
         console.error(err);
         alert('An error occurred during recompute.');
@@ -99,7 +89,83 @@ function renderAllWords(words) {
         allWordsListEl.appendChild(pill);
     });
 }
-renderAllWords(allWords);
+
+let tileWordsMap = {};
+let wordsList = [];
+let allWords = [];
+let gridData = [];
+const rows = 14;
+const cols = 14;
+
+async function buildWordMap() {
+    tileWordsMap = {};
+    for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+            tileWordsMap[`${r},${c}`] = new Set();
+        }
+    }
+    
+    const allowReuse = reuseToggle.checked;
+    const straightOnly = straightToggle.checked;
+    
+    function dfs(r, c, remaining, seen, word, direction) {
+        for (let d of dirs) {
+            if (straightOnly && direction !== null && (direction[0] !== d[0] || direction[1] !== d[1])) continue;
+            let nr = r + d[0];
+            let nc = c + d[1];
+            if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) {
+                if (!allowReuse && seen.some(pos => pos[0] === nr && pos[1] === nc)) continue;
+                
+                if (checkEquivalent(gridData[nr][nc], remaining[0])) {
+                    let newDir = direction !== null ? direction : d;
+                    if (remaining.length === 1) {
+                        for (let pos of seen) {
+                            tileWordsMap[`${pos[0]},${pos[1]}`].add(word);
+                        }
+                        tileWordsMap[`${nr},${nc}`].add(word);
+                    } else {
+                        seen.push([nr, nc]);
+                        dfs(nr, nc, remaining.slice(1), seen, word, newDir);
+                        seen.pop();
+                    }
+                }
+            }
+        }
+    }
+
+    // Process in chunks to avoid freezing the UI
+    return new Promise(resolve => {
+        let uniqueWords = new Set();
+        let i = 0;
+        const chunkSize = 1000;
+        
+        function processChunk() {
+            const end = Math.min(i + chunkSize, wordsList.length);
+            for (; i < end; i++) {
+                const word = wordsList[i];
+                if (word.length <= 1) continue;
+                for (let r = 0; r < rows; r++) {
+                    for (let c = 0; c < cols; c++) {
+                        if (checkEquivalent(gridData[r][c], word[0])) {
+                            dfs(r, c, word.slice(1), [[r, c]], word, null);
+                        }
+                    }
+                }
+            }
+            if (i < wordsList.length) {
+                setTimeout(processChunk, 0);
+            } else {
+                for (let key in tileWordsMap) {
+                    for (let word of tileWordsMap[key]) uniqueWords.add(word);
+                }
+                allWords = Array.from(uniqueWords).sort((a, b) => b.length - a.length);
+                renderAllWords(allWords);
+                resolve();
+            }
+        }
+        processChunk();
+    });
+}
 
 function checkEquivalent(gridLetter, searchLetter) {
     if (gridLetter === searchLetter) return true;
@@ -116,19 +182,7 @@ function checkEquivalent(gridLetter, searchLetter) {
     return false;
 }
 
-let tilesMap = []; // 2D array of DOM elements
 
-// Initialize tilesMap
-const tileEls = document.querySelectorAll('.tile');
-let idx = 0;
-for (let r = 0; r < rows; r++) {
-    let rowArr = [];
-    for (let c = 0; c < cols; c++) {
-        rowArr.push(tileEls[idx]);
-        idx++;
-    }
-    tilesMap.push(rowArr);
-}
 
 // Search variables
 let currentPaths = []; // Array of paths (each path is an array of [r, c] coordinates)
@@ -274,7 +328,9 @@ window.actualSearchValue = searchInput.value;
 window.isHoveringWord = false;
 window.selectedCells = [];
 
-tileEls.forEach(tile => {
+function setupTileListeners() {
+    const tileEls = document.querySelectorAll('.tile');
+    tileEls.forEach(tile => {
     tile.style.cursor = 'pointer';
     tile.addEventListener('click', async (e) => {
         const r = parseInt(tile.dataset.r);
@@ -296,8 +352,7 @@ tileEls.forEach(tile => {
         drawPaths();
 
         try {
-            const response = await fetch(`/api/tile/${r}/${c}`);
-            let words = await response.json();
+            let words = Array.from(tileWordsMap[`${r},${c}`] || []).sort();
 
             // Prioritize words that start with this tile's letter
             const startsWith = words.filter(w => w.startsWith(letter));
@@ -348,6 +403,7 @@ tileEls.forEach(tile => {
         }
     });
 });
+}
 
 // Save Query Logic
 function renderSavedQueries() {
@@ -597,4 +653,52 @@ async function loadState(name) {
 if (savedQueries.length === 0 && !localStorage.getItem('letterGridInitialized')) {
     localStorage.setItem('letterGridInitialized', 'true');
     loadState('state3');
+}\n
+async function init() {
+    try {
+        const wRes = await fetch('../words.txt');
+        const wText = await wRes.text();
+        wordsList = wText.split('\n').map(w => w.trim().toUpperCase()).filter(w => w);
+        
+        const lRes = await fetch('../letters.txt');
+        const lText = await lRes.text();
+        const lLines = lText.split('\n').map(l => l.trim().toUpperCase()).filter(l => l);
+        
+        gridData = [];
+        for (let r = 0; r < rows; r++) {
+            if (lLines[r]) {
+                gridData.push(lLines[r].split(''));
+            } else {
+                gridData.push(Array(cols).fill('?'));
+            }
+        }
+        
+        letterGrid.innerHTML = '';
+        tilesMap = [];
+        for (let r = 0; r < rows; r++) {
+            let rowArr = [];
+            for (let c = 0; c < cols; c++) {
+                const tile = document.createElement('div');
+                tile.className = 'tile';
+                tile.dataset.r = r;
+                tile.dataset.c = c;
+                tile.textContent = gridData[r][c];
+                letterGrid.appendChild(tile);
+                rowArr.push(tile);
+            }
+            tilesMap.push(rowArr);
+        }
+        
+        setupTileListeners();
+        
+        recomputeStatus.style.display = 'block';
+        recomputeStatus.textContent = 'Loading words...';
+        await buildWordMap();
+        recomputeStatus.style.display = 'none';
+        recomputeStatus.textContent = 'Computing... Please wait';
+        
+    } catch (err) {
+        console.error("Init error", err);
+    }
 }
+\ninit();\n

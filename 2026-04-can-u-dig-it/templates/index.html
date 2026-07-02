@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LetterGrid Search</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
@@ -51,11 +51,7 @@
 
             <div class="grid-container" id="gridContainer">
                 <div class="letter-grid" id="letterGrid">
-                    {% for r in range(14) %}
-                    {% for c in range(14) %}
-                    <div class="tile" data-r="{{ r }}" data-c="{{ c }}">{{ grid[r][c] }}</div>
-                    {% endfor %}
-                    {% endfor %}
+                    <!-- filled by JS -->
                 </div>
                 <svg class="svg-overlay" id="svgOverlay"></svg>
             </div>
@@ -125,13 +121,7 @@
         </div>
     </div>
 
-    <script>
-        const gridData = {{ grid | tojson }};
-        const rows = 14;
-        const cols = 14;
-        let allWords = {{ all_words | tojson | safe }};
-    </script>
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script src="script.js"></script>
 </body>
 
 </html>
