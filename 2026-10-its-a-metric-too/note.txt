@@ -1,0 +1,2 @@
+No penpa replay link for this puzzle: unfortunately it was accidentally solved in 'setter' mode, so no replay file exists.
+The final solved grid is still saved in its-a-metric-too.png.
